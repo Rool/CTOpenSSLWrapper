@@ -156,7 +156,7 @@ NSData *CTOpenSSLRSADecrypt(NSData *privateKeyData, NSData *data)
     unsigned char *outputBuffer = (unsigned char *)malloc(RSA_size(privateRSA));
     int outputLength = 0;
 
-    if (!(outputLength = RSA_private_decrypt((int)inputLength, inputBytes, outputBuffer, privateRSA, RSA_PKCS1_PADDING))) {
+    if (!(outputLength = RSA_private_decrypt((int)inputLength, inputBytes, outputBuffer, privateRSA, RSA_PKCS1_OAEP_PADDING))) {
         [NSException raise:NSInternalInconsistencyException format:@"RSA private decrypt RSA_private_decrypt() failed"];
     }
 
