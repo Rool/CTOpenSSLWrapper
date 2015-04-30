@@ -114,7 +114,7 @@ NSData *CTOpenSSLRSAEncrypt(NSData *publicKeyData, NSData *data)
     unsigned char *outputBuffer = (unsigned char *)malloc(RSA_size(publicRSA));
     int outputLength = 0;
 
-    if (!(outputLength = RSA_public_encrypt((int)inputLength, inputBytes, (unsigned char *)outputBuffer, publicRSA, RSA_PKCS1_PADDING))) {
+    if (!(outputLength = RSA_public_encrypt((int)inputLength, inputBytes, (unsigned char *)outputBuffer, publicRSA, RSA_PKCS1_OAEP_PADDING))) {
         [NSException raise:NSInternalInconsistencyException format:@"RSA public encryption RSA_public_encrypt() failed"];
     }
 
