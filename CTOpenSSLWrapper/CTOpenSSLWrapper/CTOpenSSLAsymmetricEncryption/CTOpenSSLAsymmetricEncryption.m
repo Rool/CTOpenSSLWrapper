@@ -135,7 +135,6 @@ NSData *CTOpenSSLRSAEncryptWithPadding(NSData *publicKeyData, NSData *data, int 
 	return encryptedData;
 }
 
-
 NSData *CTOpenSSLRSADecrypt(NSData *privateKeyData, NSData *data)
 {
 	return CTOpenSSLRSADecryptWithPadding(privateKeyData, data, RSA_PKCS1_PADDING);
