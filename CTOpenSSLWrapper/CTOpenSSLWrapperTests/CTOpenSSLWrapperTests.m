@@ -54,6 +54,16 @@
     
     NSString *decryptedString = [[NSString alloc] initWithData:decryptedData encoding:NSUTF8StringEncoding];
     STAssertEqualObjects(stringToBeDecrypted, decryptedString, @"string before and after asymmetric encryption must be the same");
+
+	NSData *encryptedDataWithPadding = CTOpenSSLRSAEncryptWithPadding(publicKeyData, rawData, RSA_PKCS1_OAEP_PADDING);
+	STAssertNotNil(encryptedDataWithPadding, @"encrypted data cannot be nil");
+	STAssertFalse([rawData isEqualToData:encryptedDataWithPadding], @"CTOpenSSLAsymmetricEncrypt cannot return unencrypted data");
+
+	NSData *decryptedDataWithPadding = CTOpenSSLRSADecryptWithPadding(privateKeyData, encryptedDataWithPadding, RSA_PKCS1_OAEP_PADDING);
+	STAssertNotNil(decryptedDataWithPadding, @"decrypted data cannot be nil");
+
+	NSString *decryptedStringWithPadding = [[NSString alloc] initWithData:decryptedDataWithPadding encoding:NSUTF8StringEncoding];
+	STAssertEqualObjects(stringToBeDecrypted, decryptedStringWithPadding, @"string before and after asymmetric encryption must be the same");
 }
 
 - (void)testDigestGeneration

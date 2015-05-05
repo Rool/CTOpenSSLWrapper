@@ -15,4 +15,6 @@
 #import "NSData+CTOpenSSL.h"
 #import "NSString+CTOpenSSL.h"
 
+#import <openssl/rsa.h>
+
 void CTOpenSSLInitialize(void);

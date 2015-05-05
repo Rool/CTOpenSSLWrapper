@@ -95,81 +95,92 @@ NSData *CTOpenSSLExtractPublicKeyFromPrivateRSAKey(NSData *privateKeyData)
 
 NSData *CTOpenSSLRSAEncrypt(NSData *publicKeyData, NSData *data)
 {
-    CTOpenSSLInitialize();
-
-    unsigned char *inputBytes = (unsigned char *)data.bytes;
-    long inputLength = data.length;
-
-    BIO *publicBIO = NULL;
-    RSA *publicRSA = NULL;
-
-    if (!(publicBIO = BIO_new_mem_buf((unsigned char *)publicKeyData.bytes, (int)publicKeyData.length))) {
-        [NSException raise:NSInternalInconsistencyException format:@"cannot allocate new BIO memory buffer"];
-    }
-
-    if (!PEM_read_bio_RSA_PUBKEY(publicBIO, &publicRSA, NULL, NULL)) {
-        [NSException raise:NSInternalInconsistencyException format:@"cannot read public RSA BIO with PEM_read_bio_RSA_PUBKEY()!"];
-    }
-
-    unsigned char *outputBuffer = (unsigned char *)malloc(RSA_size(publicRSA));
-    int outputLength = 0;
-
-    if (!(outputLength = RSA_public_encrypt((int)inputLength, inputBytes, (unsigned char *)outputBuffer, publicRSA, RSA_PKCS1_OAEP_PADDING))) {
-        [NSException raise:NSInternalInconsistencyException format:@"RSA public encryption RSA_public_encrypt() failed"];
-    }
-
-    if (outputLength == -1) {
-        [NSException raise:NSInternalInconsistencyException format:@"Encryption failed with error %s (%s)", ERR_error_string(ERR_get_error(), NULL), ERR_reason_error_string(ERR_get_error())];
-    }
-
-    NSData *encryptedData = [NSData dataWithBytesNoCopy:outputBuffer length:outputLength freeWhenDone:YES];
-
-    BIO_free(publicBIO);
-    RSA_free(publicRSA);
-
-    return encryptedData;
+	return CTOpenSSLRSAEncryptWithPadding(publicKeyData, data, RSA_PKCS1_PADDING);
 }
+
+NSData *CTOpenSSLRSAEncryptWithPadding(NSData *publicKeyData, NSData *data, int padding)
+{
+	CTOpenSSLInitialize();
+
+	unsigned char *inputBytes = (unsigned char *)data.bytes;
+	long inputLength = data.length;
+
+	BIO *publicBIO = NULL;
+	RSA *publicRSA = NULL;
+
+	if (!(publicBIO = BIO_new_mem_buf((unsigned char *)publicKeyData.bytes, (int)publicKeyData.length))) {
+		[NSException raise:NSInternalInconsistencyException format:@"cannot allocate new BIO memory buffer"];
+	}
+
+	if (!PEM_read_bio_RSA_PUBKEY(publicBIO, &publicRSA, NULL, NULL)) {
+		[NSException raise:NSInternalInconsistencyException format:@"cannot read public RSA BIO with PEM_read_bio_RSA_PUBKEY()!"];
+	}
+
+	unsigned char *outputBuffer = (unsigned char *)malloc(RSA_size(publicRSA));
+	int outputLength = 0;
+
+	if (!(outputLength = RSA_public_encrypt((int)inputLength, inputBytes, (unsigned char *)outputBuffer, publicRSA, padding))) {
+		[NSException raise:NSInternalInconsistencyException format:@"RSA public encryption RSA_public_encrypt() failed"];
+	}
+
+	if (outputLength == -1) {
+		[NSException raise:NSInternalInconsistencyException format:@"Encryption failed with error %s (%s)", ERR_error_string(ERR_get_error(), NULL), ERR_reason_error_string(ERR_get_error())];
+	}
+
+	NSData *encryptedData = [NSData dataWithBytesNoCopy:outputBuffer length:outputLength freeWhenDone:YES];
+
+	BIO_free(publicBIO);
+	RSA_free(publicRSA);
+
+	return encryptedData;
+}
+
 
 NSData *CTOpenSSLRSADecrypt(NSData *privateKeyData, NSData *data)
 {
-    CTOpenSSLInitialize();
+	return CTOpenSSLRSADecryptWithPadding(privateKeyData, data, RSA_PKCS1_PADDING);
+}
 
-    unsigned char *inputBytes = (unsigned char *)data.bytes;
-    long inputLength = data.length;
+NSData *CTOpenSSLRSADecryptWithPadding(NSData *privateKeyData, NSData *data, int padding)
+{
+	CTOpenSSLInitialize();
 
-    BIO *privateBIO = NULL;
-    RSA *privateRSA = NULL;
+	unsigned char *inputBytes = (unsigned char *)data.bytes;
+	long inputLength = data.length;
 
-    if (!(privateBIO = BIO_new_mem_buf((unsigned char*)privateKeyData.bytes, (int)privateKeyData.length))) {
-        [NSException raise:NSInternalInconsistencyException format:@"cannot allocate new BIO memory buffer"];
-    }
+	BIO *privateBIO = NULL;
+	RSA *privateRSA = NULL;
 
-    if (!PEM_read_bio_RSAPrivateKey(privateBIO, &privateRSA, NULL, NULL)) {
-        [NSException raise:NSInternalInconsistencyException format:@"cannot read private RSA BIO with PEM_read_bio_RSAPrivateKey()!"];
-    }
+	if (!(privateBIO = BIO_new_mem_buf((unsigned char*)privateKeyData.bytes, (int)privateKeyData.length))) {
+		[NSException raise:NSInternalInconsistencyException format:@"cannot allocate new BIO memory buffer"];
+	}
 
-    int RSAKeyError = RSA_check_key(privateRSA);
-    if (RSAKeyError != 1) {
-        [NSException raise:NSInternalInconsistencyException format:@"private RSA key is invalid: %d", RSAKeyError];
-    }
+	if (!PEM_read_bio_RSAPrivateKey(privateBIO, &privateRSA, NULL, NULL)) {
+		[NSException raise:NSInternalInconsistencyException format:@"cannot read private RSA BIO with PEM_read_bio_RSAPrivateKey()!"];
+	}
 
-    unsigned char *outputBuffer = (unsigned char *)malloc(RSA_size(privateRSA));
-    int outputLength = 0;
+	int RSAKeyError = RSA_check_key(privateRSA);
+	if (RSAKeyError != 1) {
+		[NSException raise:NSInternalInconsistencyException format:@"private RSA key is invalid: %d", RSAKeyError];
+	}
 
-    if (!(outputLength = RSA_private_decrypt((int)inputLength, inputBytes, outputBuffer, privateRSA, RSA_PKCS1_OAEP_PADDING))) {
-        [NSException raise:NSInternalInconsistencyException format:@"RSA private decrypt RSA_private_decrypt() failed"];
-    }
+	unsigned char *outputBuffer = (unsigned char *)malloc(RSA_size(privateRSA));
+	int outputLength = 0;
 
-    if (outputLength == -1) {
-        [NSException raise:NSInternalInconsistencyException format:@"Encryption failed with error %s (%s)", ERR_error_string(ERR_get_error(), NULL), ERR_reason_error_string(ERR_get_error())];
-    }
+	if (!(outputLength = RSA_private_decrypt((int)inputLength, inputBytes, outputBuffer, privateRSA, padding))) {
+		[NSException raise:NSInternalInconsistencyException format:@"RSA private decrypt RSA_private_decrypt() failed"];
+	}
 
-    NSData *decryptedData = [NSData dataWithBytesNoCopy:outputBuffer length:outputLength freeWhenDone:YES];
+	if (outputLength == -1) {
+		[NSException raise:NSInternalInconsistencyException format:@"Encryption failed with error %s (%s)", ERR_error_string(ERR_get_error(), NULL), ERR_reason_error_string(ERR_get_error())];
+	}
 
-    BIO_free(privateBIO);
-    RSA_free(privateRSA);
+	NSData *decryptedData = [NSData dataWithBytesNoCopy:outputBuffer length:outputLength freeWhenDone:YES];
 
-    return decryptedData;
+	BIO_free(privateBIO);
+	RSA_free(privateRSA);
+
+	return decryptedData;
 }
 
 NSData *CTOpenSSLRSASignWithPrivateKey(NSData *privateKeyData, NSData *data, CTOpenSSLDigestType digestType)
